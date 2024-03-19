@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MyChat</title>
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        form {border: 3px solid #f1f1f1;}
+
+        #chatForm { background-color: #f2f3f4; padding: 0.25rem; position: fixed; bottom: 0; left: 25%; right: 25%; display: flex; height: 4rem; box-sizing: border-box; }
+
+        #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+        #input:focus { outline: none; }
+
+        #fst,#fstSec {margin: auto; padding-top: 3rem; position: fixed; top: 6rem; left: 37%; right: 37%;}
+        #snd {position: fixed; top: 4rem; left: 1rem;}
+        #trd {margin: auto; width: 50%; box-shadow: 0 2px 4px rgba(0, 0, 0, .2);}
+
+        #messages {padding: 1rem 1rem 3rem 1rem; margin-top: 5rem;}
+        #sendBtn {
+            background-color: #9696ea;
+            color: white;
+            padding: 0 1rem;
+            margin: 0.25rem;
+            border: none;
+            cursor: pointer;
+            width: auto;
+            border-radius: 5px;
+
+        }
+
+        input[type=text], input[type=password] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            border-radius: 5px;
+        }
+
+        input[type=button] {
+            width: auto;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            box-sizing: border-box;
+            border: none;
+            background-color: #f2f3f4;
+        }
+
+        input[type=button]:hover {
+            opacity: 0.8;
+        }
+
+        button {
+            background-color: #9696ea;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .cancelButton {
+            text-align: center;
+            width: auto;
+            padding: 10px 18px;
+        }
+
+        .container {
+            padding: 16px;
+        }
+  </style>
+</head>
+
+<body>
+<div style="padding-left: 1rem; height: 4rem; box-shadow: 0 6px 4px -4px rgba(0, 0, 0, .2); width: 100%; display: flex; position: fixed; top: 0; background-color: white;">
+    <h3 style="flex-grow: 1">MyChat</h3>
+    <input style="margin-right: 2rem; opacity: 0;" type="button" id="exit" value="Выйти">
+</div>
+
+<div id="fst">
+    <form id="loginForm">
+        <div class="cancelButton">
+            <h2>Войдите в аккаунт или </h2>
+            <input type="button" id="registration" value="создайте новый">
+        </div>
+        <div class="container">
+            <label for="nickname"><b>Логин</b></label>
+            <input type="text" autocomplete="off" placeholder="Введите логин" id="nickname" required>
+            <label for="password"><b>Пароль</b></label>
+            <input type="password" autocomplete="off" placeholder="Введите пароль" id="password" required>
+            <button>Войти</button>
+        </div>
+    </form>
+</div>
+
+<div id="fstSec" hidden>
+    <form id="regForm">
+        <div class="cancelButton">
+            <h2>Создайте новый аккаунт или </h2>
+            <input type="button" id="entrance" value="войдите в существующий">
+        </div>
+        <div class="container">
+            <label for="regNickname"><b>Логин</b></label>
+            <input type="text" autocomplete="off" placeholder="Создайте логин" id="regNickname" required>
+            <label for="regPassword"><b>Пароль</b></label>
+            <input type="password" autocomplete="off" placeholder="Создайте пароль" id="regPassword" required>
+            <button>Зарегистрироваться</button>
+        </div>
+    </form>
+</div>
+
+<div id="snd" hidden>
+    <h3>Пользователи:</h3>
+    <h4 id="iAm"></h4>
+    <div id="users"></div>
+</div>
+
+<div id="trd" hidden>
+    <div id="messages"></div>
+    <div>
+        <form id="chatForm" action="">
+            <input id="input" autocomplete="off" placeholder="Напишите сообщение..." /><button id="sendBtn">Отправить</button>
+        </form>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    let socket = io();
+
+    let messages = document.getElementById('messages');
+    let chat = document.getElementById('chatForm');
+    let input = document.getElementById('input');
+    let nickname = document.getElementById('nickname');
+    let password = document.getElementById('password');
+    let regNickname = document.getElementById('regNickname');
+    let regPassword = document.getElementById('regPassword');
+    let login = document.getElementById('loginForm');
+    let reg =  document.getElementById('regForm');
+    let onlineUsers =  document.getElementById('users');
+
+    document.getElementById('registration').onclick = function (){
+        document.getElementById('fst').hidden = true;
+        document.getElementById('fstSec').hidden = false;
+    }
+
+    document.getElementById('entrance').onclick = function (){
+        document.getElementById('fst').hidden = false;
+        document.getElementById('fstSec').hidden = true;
+    }
+
+    document.getElementById('exit').onclick = function (){
+        window.location.reload();
+    }
+
+    login.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (nickname.value && password.value) {
+            socket.emit('signIn', {nick: nickname.value, pass: password.value});
+        }
+    });
+
+    reg.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (regNickname.value && regPassword.value) {
+            socket.emit('logIn', {nick: regNickname.value, pass: regPassword.value});
+        }
+    });
+
+    chat.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (input.value) {
+            socket.emit('chat message', {message: input.value, name: nickname.value});
+            input.value = '';
+        }
+    });
+
+    socket.on('checkData', function(msg) {
+        if(msg.case === 1){
+            document.getElementById('fst').hidden = true;
+            document.getElementById('fstSec').hidden = true;
+            document.getElementById('snd').hidden = false;
+            document.getElementById('trd').hidden = false;
+            document.getElementById('exit').style.opacity = "1";
+            document.getElementById('iAm').textContent = nickname.value + " (Вы)";
+        }
+        if(msg.case === 2){
+            document.getElementById('fst').hidden = true;
+            document.getElementById('fstSec').hidden = true;
+            document.getElementById('snd').hidden = false;
+            document.getElementById('trd').hidden = false;
+            document.getElementById('exit').style.opacity = "1";
+            nickname = regNickname;
+            document.getElementById('iAm').textContent = nickname.value + " (Вы)";
+        }
+        if(msg.case === 3){
+            alert('Неверный логин или пароль!');
+        }
+        if(msg.case === 4){
+            alert('Пользователь с таким именем уже существует!');
+        }
+        if(msg.case === 5){
+            alert('В аккаунт уже вошли с другого устройства!');
+        }
+    });
+
+    socket.on('new message', function(msg) {
+        let messageEl = document.createElement('div');
+        let headEl = document.createElement('h3');
+        let bodyEl = document.createElement('p');
+        messageEl.style.backgroundColor = (msg.newName ==='Я') ? "#e3e3fd" : "#f0f8ff";
+        messageEl.style.borderRadius = "0.5rem";
+        headEl.textContent = msg.newName + "   " + msg.newHours + ':' + msg.newMinutes;
+        bodyEl.textContent = msg.newMessage;
+        messageEl.appendChild(headEl);
+        messageEl.appendChild(bodyEl);
+        messages.appendChild(messageEl);
+        window.scrollTo(100, document.body.scrollHeight);
+    });
+
+    socket.on('history messages', function(msg) {
+        let messageEl = document.createElement('div');
+        let headEl = document.createElement('h3');
+        let bodyEl = document.createElement('p');
+        messageEl.style.backgroundColor = (msg.historyName ==='Я') ? "#e3e3fd" : "#f0f8ff";
+        messageEl.style.borderRadius = "0.5rem";
+        headEl.textContent = msg.historyName +"   "+ msg.historyHours + ':' + msg.historyMinutes;
+        bodyEl.textContent = msg.historyMessage;
+        messageEl.appendChild(headEl);
+        messageEl.appendChild(bodyEl);
+        messages.appendChild(messageEl);
+        window.scrollTo(100, document.body.scrollHeight);
+    });
+
+    socket.on('online users', function (msg) {
+        if(msg.check === 0){
+            let deleteElement = onlineUsers.querySelectorAll('div');
+            for (let i = 0; i < deleteElement.length; i++) {
+                deleteElement[i].remove();
+            }
+        }
+        if(msg.id !== socket.id && (nickname.value !== '' || regNickname.value !== '')){
+            let usersEl = document.createElement('div');
+            usersEl.textContent = msg.name + " (" +((msg.online === true) ? 'online' : 'offline') +")";
+            onlineUsers.appendChild(usersEl);
+        }
+    });
+</script>
+</body>
+</html>
